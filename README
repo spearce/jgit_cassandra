@@ -1,0 +1,52 @@
+org.eclipse.jgit.storage.cassandra
+----------------------------------
+
+This package is a trivial implementation of the
+org.eclipse.jgit.storage.dht.spi interface, binding
+JGit's generic DHT storage onto the Apache Cassandra
+NoSQL database.
+
+
+Install Cassandra 0.7 or later, and start it on at least one node.
+The MAX_HEAP_SIZE setting needs to be at least 2G to work with the
+400M linux-2.6.git repository:
+
+  MAX_HEAP_SIZE=2G cassandra/bin/cassandra -f
+
+Define the keyspace and schema in Cassandra:
+
+  cassandra/bin/cassandra-cli --host localhost --file schema.cs
+
+
+Compile this package, you may need JGit first:
+
+  (cd ../jgit && mvn clean install)
+  mvn clean package
+
+Create a repository:
+
+  java -jar ./target/jgit-cs.jar \
+    cassandra-init \
+    git+cassandra://localhost/test/git_store/jgit.git
+
+A git+cassandra repository URI has the obvious hostname component
+(here "localhost").  The path starts with a cluster name, which is
+only used internally for the connection pool (here "test"), and then
+has the keyspace name (here "git_store").  The remainder of the URI
+path is the repository path name ("jgit.git").
+
+Launch a Git daemon, which needs at least 800M to handle the linux-2.6
+repository.  Currently JGit's DHT implementation holds onto the entire
+pack during receive, to implement delta resolution efficiently.
+
+  java -Xmx800m -jar ./target/jgit-cs.jar cassandra-daemon \
+	--enable receive-pack
+	git+cassandra://localhost/test/git_store
+
+Push to it:
+
+  git push git://localhost/jgit.git master
+
+Clone from it:
+
+  git clone git://localhost/jgit.git

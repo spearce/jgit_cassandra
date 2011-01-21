@@ -1,0 +1,2 @@
+org.eclipse.jgit.storage.cassandra.pgm.CassandraDaemon
+org.eclipse.jgit.storage.cassandra.pgm.CassandraInit
